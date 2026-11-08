@@ -1,0 +1,1049 @@
+--// dfx hub v5.12 | Full Complete Edition
+local Players = game:GetService("Players")
+local TweenService = game:GetService("TweenService")
+local UserInputService = game:GetService("UserInputService")
+local RunService = game:GetService("RunService")
+local CoreGui = game:GetService("CoreGui")
+local Lighting = game:GetService("Lighting")
+local Workspace = game:GetService("Workspace")
+
+local LocalPlayer = Players.LocalPlayer
+local ParentGui = nil
+local ok, err = pcall(function()
+    ParentGui = CoreGui
+end)
+if not ok or not ParentGui then
+    ParentGui = LocalPlayer:WaitForChild("PlayerGui")
+end
+
+-- Clean up old instances
+for _, name in ipairs({"DfxHubUI", "DfxFlyController", "DfxIntro"}) do
+    if ParentGui:FindFirstChild(name) then
+        ParentGui:FindFirstChild(name):Destroy()
+    end
+end
+
+--// UI Sound Effects Generator (Custom Intro Audio: 109240795003161)
+local function PlayGuiSound(soundId, vol)
+    local s = Instance.new("Sound")
+    s.SoundId = "rbxassetid://" .. tostring(soundId or 109240795003161)
+    s.Volume = vol or 0.5
+    s.Parent = ParentGui
+    s:Play()
+    task.delay(1.5, function() s:Destroy() end)
+end
+
+--// Themes Table (12 Themes)
+local Themes = {
+    ["Green Theme"] = {
+        Background = Color3.fromRGB(15, 15, 18),
+        Sidebar = Color3.fromRGB(11, 11, 13),
+        CardBg = Color3.fromRGB(24, 24, 30),
+        CardHover = Color3.fromRGB(32, 32, 40),
+        Accent = Color3.fromRGB(16, 185, 129),
+        Text = Color3.fromRGB(245, 245, 247),
+        SubText = Color3.fromRGB(140, 140, 155),
+        Border = Color3.fromRGB(38, 38, 48)
+    },
+    ["Midnight Blue"] = {
+        Background = Color3.fromRGB(10, 13, 22),
+        Sidebar = Color3.fromRGB(7, 9, 16),
+        CardBg = Color3.fromRGB(17, 22, 38),
+        CardHover = Color3.fromRGB(24, 32, 52),
+        Accent = Color3.fromRGB(56, 189, 248),
+        Text = Color3.fromRGB(241, 245, 249),
+        SubText = Color3.fromRGB(148, 163, 184),
+        Border = Color3.fromRGB(28, 40, 68)
+    },
+    ["Crimson Dark"] = {
+        Background = Color3.fromRGB(13, 8, 10),
+        Sidebar = Color3.fromRGB(9, 5, 7),
+        CardBg = Color3.fromRGB(24, 14, 18),
+        CardHover = Color3.fromRGB(35, 20, 26),
+        Accent = Color3.fromRGB(244, 63, 94),
+        Text = Color3.fromRGB(255, 241, 242),
+        SubText = Color3.fromRGB(190, 150, 155),
+        Border = Color3.fromRGB(50, 28, 36)
+    },
+    ["Sakura"] = {
+        Background = Color3.fromRGB(20, 14, 24),
+        Sidebar = Color3.fromRGB(14, 10, 17),
+        CardBg = Color3.fromRGB(31, 22, 38),
+        CardHover = Color3.fromRGB(42, 30, 50),
+        Accent = Color3.fromRGB(244, 114, 182),
+        Text = Color3.fromRGB(253, 242, 248),
+        SubText = Color3.fromRGB(196, 165, 185),
+        Border = Color3.fromRGB(55, 36, 65)
+    },
+    ["Cyberpunk"] = {
+        Background = Color3.fromRGB(10, 9, 22),
+        Sidebar = Color3.fromRGB(6, 6, 15),
+        CardBg = Color3.fromRGB(18, 16, 38),
+        CardHover = Color3.fromRGB(26, 23, 52),
+        Accent = Color3.fromRGB(250, 204, 21),
+        Text = Color3.fromRGB(254, 249, 195),
+        SubText = Color3.fromRGB(165, 160, 205),
+        Border = Color3.fromRGB(45, 40, 85)
+    },
+    ["Emerald"] = {
+        Background = Color3.fromRGB(7, 16, 12),
+        Sidebar = Color3.fromRGB(4, 11, 8),
+        CardBg = Color3.fromRGB(12, 26, 20),
+        CardHover = Color3.fromRGB(18, 38, 29),
+        Accent = Color3.fromRGB(52, 211, 153),
+        Text = Color3.fromRGB(236, 253, 245),
+        SubText = Color3.fromRGB(140, 180, 160),
+        Border = Color3.fromRGB(22, 50, 36)
+    },
+    ["Sunset"] = {
+        Background = Color3.fromRGB(18, 13, 20),
+        Sidebar = Color3.fromRGB(12, 8, 14),
+        CardBg = Color3.fromRGB(28, 20, 32),
+        CardHover = Color3.fromRGB(38, 28, 44),
+        Accent = Color3.fromRGB(251, 146, 60),
+        Text = Color3.fromRGB(255, 247, 237),
+        SubText = Color3.fromRGB(185, 160, 165),
+        Border = Color3.fromRGB(50, 36, 46)
+    },
+    ["Light Mode"] = {
+        Background = Color3.fromRGB(238, 238, 242),
+        Sidebar = Color3.fromRGB(250, 250, 255),
+        CardBg = Color3.fromRGB(250, 250, 255),
+        CardHover = Color3.fromRGB(225, 225, 235),
+        Accent = Color3.fromRGB(79, 70, 229),
+        Text = Color3.fromRGB(24, 24, 27),
+        SubText = Color3.fromRGB(113, 113, 122),
+        Border = Color3.fromRGB(200, 200, 210)
+    },
+    ["Neon Purple"] = {
+        Background = Color3.fromRGB(15, 10, 25),
+        Sidebar = Color3.fromRGB(10, 6, 18),
+        CardBg = Color3.fromRGB(25, 16, 40),
+        CardHover = Color3.fromRGB(35, 23, 55),
+        Accent = Color3.fromRGB(168, 85, 247),
+        Text = Color3.fromRGB(250, 245, 255),
+        SubText = Color3.fromRGB(180, 160, 210),
+        Border = Color3.fromRGB(50, 30, 80)
+    },
+    ["Solar Flare"] = {
+        Background = Color3.fromRGB(22, 12, 10),
+        Sidebar = Color3.fromRGB(15, 8, 7),
+        CardBg = Color3.fromRGB(38, 20, 16),
+        CardHover = Color3.fromRGB(52, 28, 22),
+        Accent = Color3.fromRGB(249, 115, 22),
+        Text = Color3.fromRGB(255, 247, 237),
+        SubText = Color3.fromRGB(210, 160, 140),
+        Border = Color3.fromRGB(70, 35, 25)
+    },
+    ["Monochrome"] = {
+        Background = Color3.fromRGB(12, 12, 12),
+        Sidebar = Color3.fromRGB(8, 8, 8),
+        CardBg = Color3.fromRGB(22, 22, 22),
+        CardHover = Color3.fromRGB(35, 35, 35),
+        Accent = Color3.fromRGB(255, 255, 255),
+        Text = Color3.fromRGB(255, 255, 255),
+        SubText = Color3.fromRGB(150, 150, 150),
+        Border = Color3.fromRGB(50, 50, 50)
+    },
+    ["Amethyst Dream"] = {
+        Background = Color3.fromRGB(14, 11, 26),
+        Sidebar = Color3.fromRGB(9, 7, 18),
+        CardBg = Color3.fromRGB(24, 18, 45),
+        CardHover = Color3.fromRGB(34, 26, 62),
+        Accent = Color3.fromRGB(192, 132, 252),
+        Text = Color3.fromRGB(243, 232, 255),
+        SubText = Color3.fromRGB(190, 170, 220),
+        Border = Color3.fromRGB(60, 40, 95)
+    }
+}
+
+local CurrentTheme = Themes["Green Theme"]
+local ThemeObjects = {}
+
+local function RegisterTheme(obj, prop, themeKey)
+    table.insert(ThemeObjects, {Object = obj, Property = prop, Key = themeKey})
+    obj[prop] = CurrentTheme[themeKey]
+end
+
+local function ApplyTheme(themeName)
+    if not Themes[themeName] then return end
+    CurrentTheme = Themes[themeName]
+    for _, item in ipairs(ThemeObjects) do
+        if item.Object and item.Object.Parent then
+            TweenService:Create(item.Object, TweenInfo.new(0.25), {
+                [item.Property] = CurrentTheme[item.Key]
+            }):Play()
+        end
+    end
+end
+
+--// UI Helper Functions
+local function AddCorner(parent, radius)
+    local c = Instance.new("UICorner")
+    c.CornerRadius = UDim.new(0, radius or 8)
+    c.Parent = parent
+    return c
+end
+
+local function AddStroke(parent, color)
+    local s = Instance.new("UIStroke")
+    s.Thickness = 1.4
+    s.Color = color or CurrentTheme.Border
+    s.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+    s.Parent = parent
+    return s
+end
+
+--// FULL-SCREEN HACKER INTRO WITH CUSTOM SOUND (109240795003161)
+local IntroGui = Instance.new("ScreenGui")
+IntroGui.Name = "DfxIntro"
+IntroGui.IgnoreGuiInset = true
+IntroGui.ResetOnSpawn = false
+IntroGui.Parent = ParentGui
+
+local BlackBg = Instance.new("Frame")
+BlackBg.Size = UDim2.new(1, 0, 1, 0)
+BlackBg.Position = UDim2.new(0, 0, 0, 0)
+BlackBg.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+BlackBg.BorderSizePixel = 0
+BlackBg.Parent = IntroGui
+
+local CodeScroll = Instance.new("ScrollingFrame")
+CodeScroll.Size = UDim2.new(1, -40, 1, -40)
+CodeScroll.Position = UDim2.new(0, 20, 0, 20)
+CodeScroll.BackgroundTransparency = 1
+CodeScroll.BorderSizePixel = 0
+CodeScroll.CanvasSize = UDim2.new(0, 0, 0, 0)
+CodeScroll.AutomaticCanvasSize = Enum.AutomaticSize.Y
+CodeScroll.ScrollBarThickness = 2
+CodeScroll.Parent = BlackBg
+
+local CodeList = Instance.new("UIListLayout")
+CodeList.SortOrder = Enum.SortOrder.LayoutOrder
+CodeList.Padding = UDim.new(0, 2)
+CodeList.Parent = CodeScroll
+
+local function TypeLine(fullText, isFinal, charDelay)
+    local lbl = Instance.new("TextLabel")
+    lbl.Size = UDim2.new(1, 0, 0, isFinal and 24 or 16)
+    lbl.BackgroundTransparency = 1
+    lbl.Text = ""
+    lbl.Font = Enum.Font.Code
+    lbl.TextSize = isFinal and 18 or 13
+    lbl.TextColor3 = isFinal and Color3.fromRGB(255, 255, 255) or Color3.fromRGB(16, 185, 129)
+    lbl.TextXAlignment = Enum.TextXAlignment.Left
+    lbl.Parent = CodeScroll
+
+    CodeScroll.CanvasPosition = Vector2.new(0, CodeScroll.AbsoluteCanvasSize.Y)
+
+    if charDelay and charDelay > 0 then
+        for i = 1, #fullText do
+            lbl.Text = string.sub(fullText, 1, i)
+            if i % 3 == 0 then
+                PlayGuiSound(109240795003161, 0.4)
+            end
+            task.wait(charDelay)
+        end
+    else
+        lbl.Text = fullText
+        PlayGuiSound(109240795003161, 0.3)
+    end
+end
+
+task.spawn(function()
+    math.randomseed(tick())
+    TypeLine(">> INITIALIZING DFX HUB v5.12...", false, 0.03)
+    task.wait(0.2)
+    TypeLine(">> LOADING SYSTEM MODULES & SECURITY BYPASS...", false, 0.025)
+    task.wait(0.15)
+
+    for i = 1, 35 do
+        local bin = ""
+        for j = 1, 32 do
+            bin = bin .. tostring(math.random(0, 1))
+        end
+        TypeLine("SYS_LOAD [" .. i .. "/35] >> " .. bin .. " [OK]", false, 0)
+        task.wait(0.02)
+    end
+
+    task.wait(0.25)
+    TypeLine("--------------------------------------------------", false, 0)
+    TypeLine("WELCOME USER ID: " .. tostring(LocalPlayer.UserId) .. " | " .. LocalPlayer.Name, true, 0.045)
+    task.wait(1.1)
+
+    TweenService:Create(BlackBg, TweenInfo.new(0.6), {BackgroundTransparency = 1}):Play()
+    for _, child in ipairs(CodeScroll:GetChildren()) do
+        if child:IsA("TextLabel") then
+            TweenService:Create(child, TweenInfo.new(0.6), {TextTransparency = 1}):Play()
+        end
+    end
+    task.wait(0.6)
+    IntroGui:Destroy()
+end)
+
+--// ScreenGui Creation
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "DfxHubUI"
+ScreenGui.ResetOnSpawn = false
+ScreenGui.Parent = ParentGui
+
+local HubScale = Instance.new("UIScale")
+HubScale.Scale = 1
+HubScale.Parent = ScreenGui
+
+--// Floating Open/Close Button
+local OpenBtn = Instance.new("TextButton")
+OpenBtn.Size = UDim2.new(0, 95, 0, 32)
+OpenBtn.Position = UDim2.new(0, 20, 0.5, -16)
+OpenBtn.BackgroundColor3 = CurrentTheme.Sidebar
+OpenBtn.BorderSizePixel = 0
+OpenBtn.Text = "dfx hub"
+OpenBtn.Font = Enum.Font.GothamBold
+OpenBtn.TextSize = 12
+OpenBtn.TextColor3 = CurrentTheme.Text
+OpenBtn.Parent = ScreenGui
+AddCorner(OpenBtn, 8)
+AddStroke(OpenBtn, CurrentTheme.Accent)
+RegisterTheme(OpenBtn, "BackgroundColor3", "Sidebar")
+RegisterTheme(OpenBtn, "TextColor3", "Text")
+
+--// Main Window (Medium Scale: 620 x 380)
+local MainFrame = Instance.new("Frame")
+MainFrame.Size = UDim2.new(0, 0, 0, 0)
+MainFrame.Position = UDim2.new(0.5, 0, 0.5, 0)
+MainFrame.AnchorPoint = Vector2.new(0.5, 0.5)
+MainFrame.BackgroundColor3 = CurrentTheme.Background
+MainFrame.BorderSizePixel = 0
+MainFrame.ClipsDescendants = true
+MainFrame.Visible = false
+MainFrame.Parent = ScreenGui
+AddCorner(MainFrame, 10)
+RegisterTheme(MainFrame, "BackgroundColor3", "Background")
+
+-- Glowing Animated Stroke Frame
+local MainStroke = AddStroke(MainFrame, CurrentTheme.Accent)
+task.spawn(function()
+    while MainFrame and MainFrame.Parent do
+        TweenService:Create(MainStroke, TweenInfo.new(1.5), {Color = Color3.fromRGB(56, 189, 248)}):Play()
+        task.wait(1.5)
+        TweenService:Create(MainStroke, TweenInfo.new(1.5), {Color = CurrentTheme.Accent}):Play()
+        task.wait(1.5)
+    end
+end)
+
+local isOpen = false
+local function ToggleHub()
+    isOpen = not isOpen
+    if isOpen then
+        MainFrame.Visible = true
+        MainFrame.Size = UDim2.new(0, 0, 0, 0)
+        TweenService:Create(MainFrame, TweenInfo.new(0.3, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
+            Size = UDim2.new(0, 620, 0, 380)
+        }):Play()
+    else
+        local tw = TweenService:Create(MainFrame, TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {
+            Size = UDim2.new(0, 0, 0, 0)
+        })
+        tw:Play()
+        tw.Completed:Connect(function()
+            if not isOpen then MainFrame.Visible = false end
+        end)
+    end
+end
+
+OpenBtn.MouseButton1Click:Connect(function()
+    PlayGuiSound(6895070853, 0.5)
+    ToggleHub()
+end)
+
+--// Draggable System
+local function MakeDraggable(handle, target)
+    local dragging = false
+    local dragStart, startPos
+
+    handle.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            dragging = true
+            dragStart = input.Position
+            startPos = target.AbsolutePosition + (target.AbsoluteSize / 2)
+        end
+    end)
+
+    UserInputService.InputChanged:Connect(function(input)
+        if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+            local delta = input.Position - dragStart
+            target.AnchorPoint = Vector2.new(0.5, 0.5)
+            target.Position = UDim2.new(0, startPos.X + delta.X, 0, startPos.Y + delta.Y)
+        end
+    end)
+
+    UserInputService.InputEnded:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            dragging = false
+        end
+    end)
+end
+
+--// Top Header Bar
+local TopBar = Instance.new("Frame")
+TopBar.Size = UDim2.new(1, 0, 0, 40)
+TopBar.BackgroundTransparency = 1
+TopBar.Parent = MainFrame
+
+MakeDraggable(TopBar, MainFrame)
+MakeDraggable(OpenBtn, OpenBtn)
+
+local TopInfoLabel = Instance.new("TextLabel")
+TopInfoLabel.Size = UDim2.new(0, 380, 1, 0)
+TopInfoLabel.Position = UDim2.new(0, 15, 0, 0)
+TopInfoLabel.BackgroundTransparency = 1
+TopInfoLabel.Text = "dfx hub v5.12 | Full Edition"
+TopInfoLabel.Font = Enum.Font.Gotham
+TopInfoLabel.TextSize = 11
+TopInfoLabel.TextColor3 = CurrentTheme.SubText
+TopInfoLabel.TextXAlignment = Enum.TextXAlignment.Left
+TopInfoLabel.Parent = TopBar
+RegisterTheme(TopInfoLabel, "TextColor3", "SubText")
+
+local CloseXBtn = Instance.new("TextButton")
+CloseXBtn.Size = UDim2.new(0, 26, 0, 26)
+CloseXBtn.Position = UDim2.new(1, -34, 0, 7)
+CloseXBtn.BackgroundColor3 = CurrentTheme.Sidebar
+CloseXBtn.BorderSizePixel = 0
+CloseXBtn.Text = "✕"
+CloseXBtn.Font = Enum.Font.GothamBold
+CloseXBtn.TextSize = 11
+CloseXBtn.TextColor3 = CurrentTheme.SubText
+CloseXBtn.Parent = TopBar
+AddCorner(CloseXBtn, 5)
+AddStroke(CloseXBtn, CurrentTheme.Border)
+RegisterTheme(CloseXBtn, "BackgroundColor3", "Sidebar")
+
+CloseXBtn.MouseButton1Click:Connect(function()
+    PlayGuiSound(6895070853, 0.5)
+    ToggleHub()
+end)
+
+--// Scrollable Sidebar Navigation Panel
+local SidebarScroll = Instance.new("ScrollingFrame")
+SidebarScroll.Size = UDim2.new(0, 160, 1, -40)
+SidebarScroll.Position = UDim2.new(0, 0, 0, 40)
+SidebarScroll.BackgroundColor3 = CurrentTheme.Sidebar
+SidebarScroll.BorderSizePixel = 0
+SidebarScroll.ScrollBarThickness = 2
+SidebarScroll.CanvasSize = UDim2.new(0, 0, 0, 0)
+SidebarScroll.AutomaticCanvasSize = Enum.AutomaticSize.Y
+SidebarScroll.Parent = MainFrame
+RegisterTheme(SidebarScroll, "BackgroundColor3", "Sidebar")
+
+local SidebarList = Instance.new("UIListLayout")
+SidebarList.Padding = UDim.new(0, 5)
+SidebarList.SortOrder = Enum.SortOrder.LayoutOrder
+SidebarList.Parent = SidebarScroll
+
+local SidebarPad = Instance.new("UIPadding")
+SidebarPad.PaddingTop = UDim.new(0, 10)
+SidebarPad.PaddingLeft = UDim.new(0, 10)
+SidebarPad.PaddingRight = UDim.new(0, 10)
+SidebarPad.Parent = SidebarScroll
+
+--// Content Area
+local ContentArea = Instance.new("Frame")
+ContentArea.Size = UDim2.new(1, -160, 1, -40)
+ContentArea.Position = UDim2.new(0, 160, 0, 40)
+ContentArea.BackgroundTransparency = 1
+ContentArea.Parent = MainFrame
+
+local PageTitle = Instance.new("TextLabel")
+PageTitle.Size = UDim2.new(1, -20, 0, 22)
+PageTitle.Position = UDim2.new(0, 15, 0, 6)
+PageTitle.BackgroundTransparency = 1
+PageTitle.Text = "Dashboard"
+PageTitle.Font = Enum.Font.GothamBold
+PageTitle.TextSize = 16
+PageTitle.TextColor3 = CurrentTheme.Text
+PageTitle.TextXAlignment = Enum.TextXAlignment.Left
+PageTitle.Parent = ContentArea
+RegisterTheme(PageTitle, "TextColor3", "Text")
+
+local PagesFolder = Instance.new("Folder")
+PagesFolder.Parent = ContentArea
+
+local function CreateTab(name)
+    local TabBtn = Instance.new("TextButton")
+    TabBtn.Size = UDim2.new(1, 0, 0, 32)
+    TabBtn.BackgroundColor3 = CurrentTheme.Background
+    TabBtn.BorderSizePixel = 0
+    TabBtn.Text = "  " .. name
+    TabBtn.Font = Enum.Font.GothamMedium
+    TabBtn.TextSize = 12
+    TabBtn.TextColor3 = CurrentTheme.SubText
+    TabBtn.TextXAlignment = Enum.TextXAlignment.Left
+    TabBtn.Parent = SidebarScroll
+    AddCorner(TabBtn, 6)
+    RegisterTheme(TabBtn, "BackgroundColor3", "Background")
+    RegisterTheme(TabBtn, "TextColor3", "SubText")
+
+    local Page = Instance.new("ScrollingFrame")
+    Page.Name = name .. "Page"
+    Page.Size = UDim2.new(1, -20, 1, -42)
+    Page.Position = UDim2.new(0, 15, 0, 34)
+    Page.BackgroundTransparency = 1
+    Page.BorderSizePixel = 0
+    Page.ScrollBarThickness = 3
+    Page.Visible = false
+    Page.CanvasSize = UDim2.new(0, 0, 0, 0)
+    Page.AutomaticCanvasSize = Enum.AutomaticSize.Y
+    Page.Parent = PagesFolder
+
+    local ListLayout = Instance.new("UIListLayout")
+    ListLayout.Padding = UDim.new(0, 8)
+    ListLayout.SortOrder = Enum.SortOrder.LayoutOrder
+    ListLayout.Parent = Page
+
+    TabBtn.MouseButton1Click:Connect(function()
+        PlayGuiSound(6895070853, 0.5)
+        for _, p in ipairs(PagesFolder:GetChildren()) do
+            p.Visible = false
+        end
+        Page.Visible = true
+        PageTitle.Text = name
+    end)
+
+    return Page
+end
+
+local function CreateBarButton(page, title, subtitle, callback)
+    local Bar = Instance.new("TextButton")
+    Bar.Size = UDim2.new(1, -5, 0, 44)
+    Bar.BackgroundColor3 = CurrentTheme.CardBg
+    Bar.BorderSizePixel = 0
+    Bar.Text = ""
+    Bar.AutoButtonColor = false
+    Bar.Parent = page
+    AddCorner(Bar, 8)
+    AddStroke(Bar, CurrentTheme.Border)
+    RegisterTheme(Bar, "BackgroundColor3", "CardBg")
+
+    local Title = Instance.new("TextLabel")
+    Title.Size = UDim2.new(1, -15, 0, 18)
+    Title.Position = UDim2.new(0, 12, 0, 5)
+    Title.BackgroundTransparency = 1
+    Title.Text = title
+    Title.Font = Enum.Font.GothamBold
+    Title.TextSize = 12
+    Title.TextColor3 = CurrentTheme.Text
+    Title.TextXAlignment = Enum.TextXAlignment.Left
+    Title.Parent = Bar
+    RegisterTheme(Title, "TextColor3", "Text")
+
+    local Sub = Instance.new("TextLabel")
+    Sub.Size = UDim2.new(1, -15, 0, 14)
+    Sub.Position = UDim2.new(0, 12, 0, 23)
+    Sub.BackgroundTransparency = 1
+    Sub.Text = subtitle
+    Sub.Font = Enum.Font.Gotham
+    Sub.TextSize = 10
+    Sub.TextColor3 = CurrentTheme.SubText
+    Sub.TextXAlignment = Enum.TextXAlignment.Left
+    Sub.Parent = Bar
+    RegisterTheme(Sub, "TextColor3", "SubText")
+
+    Bar.MouseEnter:Connect(function()
+        PlayGuiSound(6895070853, 0.2)
+        TweenService:Create(Bar, TweenInfo.new(0.15), {BackgroundColor3 = CurrentTheme.CardHover}):Play()
+    end)
+    Bar.MouseLeave:Connect(function()
+        TweenService:Create(Bar, TweenInfo.new(0.15), {BackgroundColor3 = CurrentTheme.CardBg}):Play()
+    end)
+    Bar.MouseButton1Click:Connect(function()
+        PlayGuiSound(6895070853, 0.5)
+        if callback then callback() end
+    end)
+end
+
+--// Initialize All 10 Tabs
+local DashboardPage = CreateTab("Dashboard")
+local PowersPage = CreateTab("Powers")
+local AdminPanelPage = CreateTab("Admin Panel")
+local CombatPage = CreateTab("Combat")
+local PlayerPage = CreateTab("Player")
+local ScriptsPage = CreateTab("Scripts")
+local MapsPage = CreateTab("Maps")
+local CmdsPage = CreateTab("Commands")
+local ThemesPage = CreateTab("Themes")
+local SettingsPage = CreateTab("Settings")
+
+DashboardPage.Visible = true
+
+--// Analog Stick Flight Engine
+local flying = false
+local flySpeed = 50
+local iyFlyConnection
+local stickVector = Vector2.new(0, 0)
+local upVal, downVal = 0, 0
+local flyGui = nil
+
+local function CreateAnalogStick()
+    if ParentGui:FindFirstChild("DfxFlyController") then
+        ParentGui:FindFirstChild("DfxFlyController"):Destroy()
+    end
+
+    flyGui = Instance.new("ScreenGui")
+    flyGui.Name = "DfxFlyController"
+    flyGui.ResetOnSpawn = false
+    flyGui.Parent = ParentGui
+
+    local base = Instance.new("Frame")
+    base.Size = UDim2.new(0, 95, 0, 95)
+    base.Position = UDim2.new(0.8, -45, 0.6, 0)
+    base.BackgroundColor3 = Color3.fromRGB(15, 15, 20)
+    base.BackgroundTransparency = 0.4
+    base.BorderSizePixel = 0
+    base.Parent = flyGui
+    AddCorner(base, 48)
+    AddStroke(base, Color3.fromRGB(56, 189, 248))
+
+    local knob = Instance.new("TextButton")
+    knob.Size = UDim2.new(0, 40, 0, 40)
+    knob.Position = UDim2.new(0.5, -20, 0.5, -20)
+    knob.BackgroundColor3 = Color3.fromRGB(56, 189, 248)
+    knob.Text = ""
+    knob.Parent = base
+    AddCorner(knob, 20)
+
+    local dragging = false
+    local touchId = nil
+
+    knob.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            dragging = true
+            touchId = input
+        end
+    end)
+
+    UserInputService.InputChanged:Connect(function(input)
+        if dragging and (input == touchId or input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+            local baseCenter = base.AbsolutePosition + (base.AbsoluteSize / 2)
+            local currentPos = Vector2.new(input.Position.X, input.Position.Y)
+            local delta = currentPos - baseCenter
+            local radius = 35
+            if delta.Magnitude > radius then
+                delta = delta.Unit * radius
+            end
+            knob.Position = UDim2.new(0.5, delta.X - 20, 0.5, delta.Y - 20)
+            stickVector = Vector2.new(delta.X / radius, delta.Y / radius)
+        end
+    end)
+
+    UserInputService.InputEnded:Connect(function(input)
+        if input == touchId or input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            dragging = false
+            touchId = nil
+            knob.Position = UDim2.new(0.5, -20, 0.5, -20)
+            stickVector = Vector2.new(0, 0)
+        end
+    end)
+
+    local upBtn = Instance.new("TextButton")
+    upBtn.Size = UDim2.new(0, 42, 0, 22)
+    upBtn.Position = UDim2.new(0, -48, 0.5, -25)
+    upBtn.BackgroundColor3 = Color3.fromRGB(16, 185, 129)
+    upBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    upBtn.TextSize = 9
+    upBtn.Font = Enum.Font.GothamBold
+    upBtn.Text = "▲ Up"
+    upBtn.Parent = base
+    AddCorner(upBtn, 4)
+    upBtn.MouseButton1Down:Connect(function() upVal = 1 end)
+    upBtn.MouseButton1Up:Connect(function() upVal = 0 end)
+
+    local downBtn = Instance.new("TextButton")
+    downBtn.Size = UDim2.new(0, 42, 0, 22)
+    downBtn.Position = UDim2.new(0, -48, 0.5, 3)
+    downBtn.BackgroundColor3 = Color3.fromRGB(244, 63, 94)
+    downBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    downBtn.TextSize = 9
+    downBtn.Font = Enum.Font.GothamBold
+    downBtn.Text = "▼ Down"
+    downBtn.Parent = base
+    AddCorner(downBtn, 4)
+    downBtn.MouseButton1Down:Connect(function() downVal = 1 end)
+    downBtn.MouseButton1Up:Connect(function() downVal = 0 end)
+
+    local speedLbl = Instance.new("TextLabel")
+    speedLbl.Size = UDim2.new(0, 65, 0, 20)
+    speedLbl.Position = UDim2.new(1, 8, 0, 0)
+    speedLbl.BackgroundTransparency = 1
+    speedLbl.Text = "Speed: " .. flySpeed
+    speedLbl.TextColor3 = Color3.fromRGB(255, 255, 255)
+    speedLbl.Font = Enum.Font.GothamBold
+    speedLbl.TextSize = 10
+    speedLbl.Parent = base
+
+    local plusBtn = Instance.new("TextButton")
+    plusBtn.Size = UDim2.new(0, 28, 0, 22)
+    plusBtn.Position = UDim2.new(1, 8, 0, 22)
+    plusBtn.BackgroundColor3 = Color3.fromRGB(30, 30, 40)
+    plusBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    plusBtn.Text = "+"
+    plusBtn.Font = Enum.Font.GothamBold
+    plusBtn.Parent = base
+    AddCorner(plusBtn, 4)
+    plusBtn.MouseButton1Click:Connect(function()
+        flySpeed = flySpeed + 25
+        speedLbl.Text = "Speed: " .. flySpeed
+    end)
+
+    local minusBtn = Instance.new("TextButton")
+    minusBtn.Size = UDim2.new(0, 28, 0, 22)
+    minusBtn.Position = UDim2.new(1, 40, 0, 22)
+    minusBtn.BackgroundColor3 = Color3.fromRGB(30, 30, 40)
+    minusBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    minusBtn.Text = "-"
+    minusBtn.Font = Enum.Font.GothamBold
+    minusBtn.Parent = base
+    AddCorner(minusBtn, 4)
+    minusBtn.MouseButton1Click:Connect(function()
+        flySpeed = math.max(25, flySpeed - 25)
+        speedLbl.Text = "Speed: " .. flySpeed
+    end)
+end
+
+local function ToggleFly()
+    flying = not flying
+    local char = LocalPlayer.Character
+    if not char or not char:FindFirstChild("HumanoidRootPart") then return end
+    local hrp = char.HumanoidRootPart
+    local humanoid = char:FindFirstChildOfClass("Humanoid")
+
+    if flying then
+        if humanoid then humanoid.PlatformStand = true end
+        CreateAnalogStick()
+
+        local bg = Instance.new("BodyGyro")
+        bg.P = 9e4
+        bg.maxTorque = Vector3.new(9e9, 9e9, 9e9)
+        bg.cframe = hrp.CFrame
+        bg.Parent = hrp
+
+        local bv = Instance.new("BodyVelocity")
+        bv.velocity = Vector3.new(0, 0, 0)
+        bv.maxForce = Vector3.new(9e9, 9e9, 9e9)
+        bv.Parent = hrp
+
+        iyFlyConnection = RunService.RenderStepped:Connect(function()
+            if not flying or not char or not hrp.Parent then
+                if iyFlyConnection then iyFlyConnection:Disconnect() end
+                return
+            end
+
+            local cam = Workspace.CurrentCamera
+            local fVal, bVal, lVal, rVal = 0, 0, 0, 0
+            if UserInputService.KeyboardEnabled then
+                fVal = UserInputService:IsKeyDown(Enum.KeyCode.W) and 1 or 0
+                bVal = UserInputService:IsKeyDown(Enum.KeyCode.S) and -1 or 0
+                lVal = UserInputService:IsKeyDown(Enum.KeyCode.A) and -1 or 0
+                rVal = UserInputService:IsKeyDown(Enum.KeyCode.D) and 1 or 0
+                upVal = UserInputService:IsKeyDown(Enum.KeyCode.Space) and 1 or upVal
+                downVal = UserInputService:IsKeyDown(Enum.KeyCode.LeftShift) and 1 or downVal
+            else
+                fVal = -stickVector.Y > 0.1 and -stickVector.Y or 0
+                bVal = -stickVector.Y < -0.1 and -stickVector.Y or 0
+                lVal = stickVector.X < -0.1 and stickVector.X or 0
+                rVal = stickVector.X > 0.1 and stickVector.X or 0
+            end
+
+            local moveDirection = (cam.CFrame.LookVector * (fVal + bVal) + cam.CFrame.RightVector * (lVal + rVal) + Vector3.new(0, upVal - downVal, 0))
+            bv.velocity = moveDirection * flySpeed
+            bg.cframe = cam.CFrame
+        end)
+    else
+        if iyFlyConnection then iyFlyConnection:Disconnect() end
+        if flyGui then flyGui:Destroy() end
+        if hrp:FindFirstChildOfClass("BodyVelocity") then hrp:FindFirstChildOfClass("BodyVelocity"):Destroy() end
+        if hrp:FindFirstChildOfClass("BodyGyro") then hrp:FindFirstChildOfClass("BodyGyro"):Destroy() end
+        if humanoid then humanoid.PlatformStand = false end
+        stickVector = Vector2.new(0, 0)
+        upVal, downVal = 0, 0
+    end
+end
+
+--// Clean Non-Slowing Anti-Fling Engine
+local antiFlingActive = false
+RunService.Stepped:Connect(function()
+    if antiFlingActive then
+        local char = LocalPlayer.Character
+        if char then
+            local hrp = char:FindFirstChild("HumanoidRootPart")
+            if hrp then
+                local vel = hrp.AssemblyLinearVelocity
+                if vel.Magnitude > 75 then
+                    hrp.AssemblyLinearVelocity = Vector3.new(0, vel.Y, 0)
+                end
+            end
+        end
+    end
+end)
+
+--// Torso Fire Effect
+local function ApplyLocalTorsoFire(colorVal)
+    local char = LocalPlayer.Character
+    if not char then return end
+    local torso = char:FindFirstChild("Torso") or char:FindFirstChild("UpperTorso")
+    if not torso then return end
+
+    for _, child in ipairs(torso:GetChildren()) do
+        if child.Name == "DfxLocalFire" then
+            child:Destroy()
+        end
+    end
+
+    local fire = Instance.new("Fire")
+    fire.Name = "DfxLocalFire"
+    fire.Size = 10
+    fire.Heat = 18
+    fire.Color = colorVal
+    fire.SecondaryColor = Color3.fromRGB(0, 0, 0)
+    fire.Parent = torso
+end
+
+--// 1. Dashboard Tab
+CreateBarButton(DashboardPage, "💬 Join Discord Server", "Copy invite link: https://discord.gg/2fBGJsbp5", function()
+    if setclipboard then
+        setclipboard("https://discord.gg/2fBGJsbp5")
+        print("Discord invite copied to clipboard!")
+    end
+end)
+CreateBarButton(DashboardPage, "Rejoin Server", "Reconnect to current game instance", function()
+    game:GetService("TeleportService"):Teleport(game.PlaceId, LocalPlayer)
+end)
+CreateBarButton(DashboardPage, "Copy JobId", "Copy server Job ID to clipboard", function()
+    if setclipboard then setclipboard(game.JobId) end
+end)
+
+--// 2. Powers Tab
+CreateBarButton(PowersPage, "🔥 Orange Classic Fire", "Attach fire to your torso", function()
+    ApplyLocalTorsoFire(Color3.fromRGB(255, 120, 0))
+end)
+CreateBarButton(PowersPage, "⚡ Blue Electric Fire", "Attach blue fire to your torso", function()
+    ApplyLocalTorsoFire(Color3.fromRGB(0, 150, 255))
+end)
+CreateBarButton(PowersPage, "💥 Purple Magic Fire", "Attach purple fire to your torso", function()
+    ApplyLocalTorsoFire(Color3.fromRGB(180, 50, 255))
+end)
+CreateBarButton(PowersPage, "🌟 Green Toxic Fire", "Attach green fire to your torso", function()
+    ApplyLocalTorsoFire(Color3.fromRGB(0, 255, 100))
+end)
+CreateBarButton(PowersPage, "❌ Remove Fire", "Extinguish torso fire", function()
+    local char = LocalPlayer.Character
+    if char then
+        local torso = char:FindFirstChild("Torso") or char:FindFirstChild("UpperTorso")
+        if torso then
+            for _, child in ipairs(torso:GetChildren()) do
+                if child.Name == "DfxLocalFire" then child:Destroy() end
+            end
+        end
+    end
+end)
+
+--// 3. Admin Panel Tab
+CreateBarButton(AdminPanelPage, "Admin: Infinite Yield", "Load full admin command suite", function()
+    loadstring(game:HttpGet("https://raw.githubusercontent.com/EdgeIY/infiniteyield/master/source"))()
+end)
+CreateBarButton(AdminPanelPage, "Admin: Reviz Admin", "Load R6/R15 animation & tool admin", function()
+    loadstring(game:HttpGet("https://pastebin.com/raw/CTheZzKY"))()
+end)
+
+--// 4. Combat Tab (Anti-Fling & Fly)
+CreateBarButton(CombatPage, "🛡️ Clean Anti-Fling (Toggle)", "Prevent flings without slowing walk or jump", function()
+    antiFlingActive = not antiFlingActive
+    print("Anti-Fling is now: " .. tostring(antiFlingActive))
+end)
+CreateBarButton(CombatPage, "🚀 Analog Stick Fly (Toggle)", "Universal fly bypass toggle", function()
+    ToggleFly()
+end)
+
+local godModeEnabled = false
+RunService.Stepped:Connect(function()
+    if godModeEnabled then
+        local char = LocalPlayer.Character
+        if char and char:FindFirstChild("Humanoid") then
+            char.Humanoid.Health = char.Humanoid.MaxHealth
+        end
+    end
+end)
+
+CreateBarButton(CombatPage, "God Mode", "Toggle infinite health loop", function()
+    godModeEnabled = not godModeEnabled
+end)
+
+--// 5. Player Tab
+CreateBarButton(PlayerPage, "Speed +", "Set WalkSpeed to 50", function()
+    local char = LocalPlayer.Character
+    if char and char:FindFirstChild("Humanoid") then char.Humanoid.WalkSpeed = 50 end
+end)
+CreateBarButton(PlayerPage, "Normal Speed", "Reset WalkSpeed to 16", function()
+    local char = LocalPlayer.Character
+    if char and char:FindFirstChild("Humanoid") then char.Humanoid.WalkSpeed = 16 end
+end)
+CreateBarButton(PlayerPage, "High Jump", "Set JumpPower to 100", function()
+    local char = LocalPlayer.Character
+    if char and char:FindFirstChild("Humanoid") then char.Humanoid.JumpPower = 100 end
+end)
+
+--// 6. Scripts Tab
+CreateBarButton(ScriptsPage, "Fullbright", "Remove shadows and darkness", function()
+    Lighting.Brightness = 2
+    Lighting.ClockTime = 14
+    Lighting.GlobalShadows = false
+    Lighting.OutdoorAmbient = Color3.fromRGB(255, 255, 255)
+end)
+CreateBarButton(ScriptsPage, "Noclip", "Walk through walls toggle", function()
+    RunService.Stepped:Connect(function()
+        local char = LocalPlayer.Character
+        if char then
+            for _, part in ipairs(char:GetDescendants()) do
+                if part:IsA("BasePart") then part.CanCollide = false end
+            end
+        end
+    end)
+end)
+CreateBarButton(ScriptsPage, "Phone FPS Booster", "Removes heavy textures & particles safely for mobile", function()
+    Lighting.GlobalShadows = false
+    Lighting.FogEnd = 9e9
+    for _, obj in ipairs(Workspace:GetDescendants()) do
+        if obj:IsA("Texture") or obj:IsA("Decal") or obj:IsA("ParticleEmitter") or obj:IsA("Trail") or obj:IsA("Fire") or obj:IsA("Smoke") or obj:IsA("Sparkles") then
+            obj:Destroy()
+        end
+    end
+end)
+
+--// 7. Maps Tab
+local function teleportToCoords(x, y, z)
+    local char = LocalPlayer.Character
+    if char and char:FindFirstChild("HumanoidRootPart") then
+        char.HumanoidRootPart.CFrame = CFrame.new(x, y, z)
+    end
+end
+
+CreateBarButton(MapsPage, "Steal from Gods", "TP to map location", function()
+    teleportToCoords(-565, 4, -765)
+end)
+
+--// 8. Commands Tab
+CmdsPage:ClearAllChildren()
+local CmdOutput = Instance.new("ScrollingFrame")
+CmdOutput.Size = UDim2.new(1, -10, 1, -48)
+CmdOutput.BackgroundTransparency = 1
+CmdOutput.BorderSizePixel = 0
+CmdOutput.CanvasSize = UDim2.new(0, 0, 0, 0)
+CmdOutput.AutomaticCanvasSize = Enum.AutomaticSize.Y
+CmdOutput.ScrollBarThickness = 3
+CmdOutput.Parent = CmdsPage
+
+local CmdListLayout = Instance.new("UIListLayout")
+CmdListLayout.Padding = UDim.new(0, 4)
+CmdListLayout.SortOrder = Enum.SortOrder.LayoutOrder
+CmdListLayout.Parent = CmdOutput
+
+local function LogCmd(text)
+    local lbl = Instance.new("TextLabel")
+    lbl.Size = UDim2.new(1, 0, 0, 20)
+    lbl.BackgroundTransparency = 1
+    lbl.Text = " > " .. text
+    lbl.Font = Enum.Font.Code
+    lbl.TextSize = 11
+    lbl.TextColor3 = CurrentTheme.Accent
+    lbl.TextXAlignment = Enum.TextXAlignment.Left
+    lbl.Parent = CmdOutput
+    RegisterTheme(lbl, "TextColor3", "Accent")
+end
+
+LogCmd("dfx hub v5.12 Terminal Initialized.")
+LogCmd("Commands: speed [num], jump [num], fire, anti, god, ungod, fly, rejoin")
+
+local CmdInput = Instance.new("TextBox")
+CmdInput.Size = UDim2.new(1, -10, 0, 34)
+CmdInput.Position = UDim2.new(0, 0, 1, -38)
+CmdInput.BackgroundColor3 = CurrentTheme.CardBg
+CmdInput.BorderSizePixel = 0
+CmdInput.PlaceholderText = "Type command... (e.g. anti, fire, fly)"
+CmdInput.Text = ""
+CmdInput.Font = Enum.Font.Code
+CmdInput.TextSize = 12
+CmdInput.TextColor3 = CurrentTheme.Text
+CmdInput.TextXAlignment = Enum.TextXAlignment.Left
+CmdInput.ClearTextOnFocus = false
+CmdInput.Parent = CmdsPage
+AddCorner(CmdInput, 6)
+AddStroke(CmdInput, CurrentTheme.Border)
+RegisterTheme(CmdInput, "BackgroundColor3", "CardBg")
+RegisterTheme(CmdInput, "TextColor3", "Text")
+
+CmdInput.FocusLost:Connect(function(enterPressed)
+    if not enterPressed then return end
+    PlayGuiSound(6895070853, 0.5)
+    local text = CmdInput.Text
+    CmdInput.Text = ""
+    LogCmd(text)
+
+    local args = {}
+    for word in text:gmatch("%S+") do table.insert(args, word) end
+    local cmd = string.lower(args[1] or "")
+
+    if cmd == "speed" then
+        local val = tonumber(args[2]) or 16
+        local char = LocalPlayer.Character
+        if char and char:FindFirstChild("Humanoid") then
+            char.Humanoid.WalkSpeed = val
+            LogCmd("WalkSpeed set to " .. val)
+        end
+    elseif cmd == "jump" then
+        local val = tonumber(args[2]) or 50
+        local char = LocalPlayer.Character
+        if char and char:FindFirstChild("Humanoid") then
+            char.Humanoid.JumpPower = val
+            LogCmd("JumpPower set to " .. val)
+        end
+    elseif cmd == "anti" then
+        antiFlingActive = not antiFlingActive
+        LogCmd("Anti-Fling toggled: " .. tostring(antiFlingActive))
+    elseif cmd == "fire" then
+        ApplyLocalTorsoFire(Color3.fromRGB(255, 120, 0))
+        LogCmd("Torso Fire applied.")
+    elseif cmd == "fly" then
+        ToggleFly()
+        LogCmd("Fly toggled.")
+    elseif cmd == "god" then
+        godModeEnabled = true
+        LogCmd("God Mode Enabled.")
+    elseif cmd == "ungod" then
+        godModeEnabled = false
+        LogCmd("God Mode Disabled.")
+    elseif cmd == "rejoin" then
+        LogCmd("Rejoining server...")
+        game:GetService("TeleportService"):Teleport(game.PlaceId, LocalPlayer)
+    else
+        LogCmd("Unknown command: " .. tostring(cmd))
+    end
+end)
+
+--// 9. Themes Tab (All 12 Themes)
+for themeName, _ in pairs(Themes) do
+    CreateBarButton(ThemesPage, themeName, "Click to apply " .. themeName, function()
+        ApplyTheme(themeName)
+    end)
+end
+
+--// 10. Settings Tab (UI Scale)
+CreateBarButton(SettingsPage, "UI Scale: Small (0.8x)", "Shrink hub interface", function()
+    HubScale.Scale = 0.8
+end)
+CreateBarButton(SettingsPage, "UI Scale: Normal (1.0x)", "Reset hub size", function()
+    HubScale.Scale = 1.0
+end)
+CreateBarButton(SettingsPage, "UI Scale: Large (1.2x)", "Enlarge hub interface", function()
+    HubScale.Scale = 1.2
+end)
+
